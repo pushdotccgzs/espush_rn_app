@@ -3,49 +3,79 @@
  * https://github.com/facebook/react-native
  */
 
-import React, {
-  AppRegistry,
-  Component,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import React, {Component} from 'react';
+import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, BackAndroid} from 'react-native';
 
-class espush extends Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.android.js
-        </Text>
-        <Text style={styles.instructions}>
-          Shake or press menu button for dev menu
-        </Text>
-      </View>
-    );
-  }
-}
+import OnlineDevices from "./src/onlinedevices";
+import {constant} from "./src/constant";
+import EspushAsyncStorage from "./src/storage";
+
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
+    rootContainer: {
+        flex: 1,
+        flexDirection: 'column'
+    }
 });
 
+class espush extends Component {
+    constructor(props) {
+        super(props);
+        this.initStorage();
+        let defaultName = 'OnlineDevices';
+        let defaultComponent = OnlineDevices;
+        this.defaultRoute = {
+            name: defaultName,
+            component: defaultComponent
+        };
+    }
+
+    initStorage = () => {
+        global.gl_storage = new EspushAsyncStorage();
+    };
+
+    configureScene = (route) => {
+        return Navigator.SceneConfigs.FadeAndroid;
+    };
+
+    renderScene = (route, navigator) => {
+        let Component = route.component;
+        return <Component {...route.params} navigator={navigator} />;
+    };
+
+    componentDidMount() {
+        BackAndroid.addEventListener('hardwareBackPress', () => {
+            if(this.refs.nav) {
+                let routes = this.refs.nav.getCurrentRoutes();
+                let lastRoute = routes[routes.length - 1];
+                if(routes.length === 1) {
+                    return false;
+                } else {
+                    this.refs.nav.pop();
+                    return true;
+                }
+            }
+        });
+    }
+
+
+    render() {
+        return (
+            <View style={styles.rootContainer}>
+                <StatusBar
+                    // translucent={true}
+                    animated={true}
+                    backgroundColor={constant.navBackgroundColor} />
+                <Navigator
+                    ref="nav"
+                    initialRoute={this.defaultRoute}
+                    configureScene={this.configureScene}
+                    renderScene={this.renderScene} />
+            </View>
+        );
+    }
+}
+
 AppRegistry.registerComponent('espush', () => espush);
+
+//存储架构，只需要存 email，token, expire_time，使用key espush
