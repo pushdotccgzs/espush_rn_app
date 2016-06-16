@@ -6,8 +6,10 @@
     "start": "node node_modules/react-native/local-cli/cli.js start"
   },
   "dependencies": {
+    "base-64": "^0.1.0",
     "immutable": "^3.8.1",
     "lodash": "^4.13.1",
+    "md5": "^2.1.0",
     "react": "^15.1.0",
     "react-native": "0.27",
     "react-native-scrollable-tab-view": "^0.4.4",
