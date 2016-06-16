@@ -7,4 +7,8 @@ var constant = {
     API_BASE_HOME: 'https://espush.cn'
 };
 
-export {constant};
+let ab2str = (buf) => {
+    return String.fromCharCode.apply(null, new Uint16Array(buf));
+};
+
+export {constant, ab2str};

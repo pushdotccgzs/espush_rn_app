@@ -68,22 +68,27 @@ export  default class OnlineDevices extends Component {
             this.setState(newState);
         }).catch((error) => {
             alert('请求在线设备时发生错误，需要重新登录用户。');
-            var newState = _.cloneDeep(this.state);
-            var pos = _.findIndex(newState.actions, ['type', 'PROFILE']);
-            if(pos !== -1) {
-                newState.actions[pos] = {
-                    title: '平台登录',
-                    icon: require("../resources/images/login.png"),
-                    show: 'always',
-                    type: 'LOGIN'
-                }
-            }
-            this.setState(newState);
             console.log(error);
+            let newState = _.cloneDeep(this.state);
+            newState = this.change_ico_profile_login(newState);
+            this.setState(newState);
         });
     };
 
-    onDevDetailPress = () => {
+    change_ico_profile_login = (newState) => {
+        var pos = _.findIndex(newState.actions, ['type', 'PROFILE']);
+        if(pos !== -1) {
+            newState.actions[pos] = {
+                title: '平台登录',
+                icon: require("../resources/images/login.png"),
+                show: 'always',
+                type: 'LOGIN'
+            }
+        }
+        return newState;
+    };
+
+    onDevDetailPress = (devInfo) => {
         const {navigator} = this.props;
         if(!navigator) {
             alert('内部错误！');
@@ -92,14 +97,17 @@ export  default class OnlineDevices extends Component {
 
         navigator.push({
             name: 'DevDetailView',
-            component: DevDetailView
+            component: DevDetailView,
+            params: {
+                devInfo
+            }
         });
     };
 
     renderSingleDevices = (devInfo) => {
         return (
             <TouchableOpacity
-                onPress={this.onDevDetailPress}
+                onPress={_.partial(this.onDevDetailPress, devInfo)}
                 style={styles.touchableItems}>
                 <View style={styles.itemContainer}>
                     <Image
@@ -186,11 +194,11 @@ export  default class OnlineDevices extends Component {
                             renderRow={this.renderSingleDevices} />
                         :
                         <TouchableOpacity
-                            onPress={this.refreshOnlineDevices}
+                            onPress={this.refreshOnlineDevices_or_login}
                             style={styles.touchableItems}>
                             <View style={styles.itemContainer}>
                                 <View style={styles.rightContainer}>
-                                    <Text style={styles.emptyTitle}>当前无设备在线，点击刷新。</Text>
+                                    <Text style={styles.emptyTitle}>{gl_storage.isSignedIn() ? "当前无设备在线，点击刷新。" : "戳右上角登录。"}</Text>
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -202,11 +210,21 @@ export  default class OnlineDevices extends Component {
     jumpToProfile = () => {
         this.props.navigator.push({
             name: 'ProfileView',
-            component: ProfileView
+            component: ProfileView,
+            params: {
+                logoutcb: this.logoutcb
+            }
         });
     };
-    
-    refreshOnlineDevices = () => {
+
+    logoutcb = () => {
+        let newState = _.cloneDeep(this.state);
+        newState = this.change_ico_profile_login(newState);
+        newState.onlineDevs = this.ds.cloneWithRows([]);
+        this.setState(newState);
+    };
+
+    refreshOnlineDevices_or_login = () => {
         if(!gl_storage.isSignedIn()) {
             this.jumpToLogin();
         } else {

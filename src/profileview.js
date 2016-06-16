@@ -62,7 +62,10 @@ export default class ProfileView extends Component {
         super(props);
         this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         this.state = {
-            apps: this.ds.cloneWithRows([])
+            apps: this.ds.cloneWithRows([]),
+            actions: [
+                {title: '开发板', icon: require("../resources/images/signout.png"), show: 'always', type: 'LOGOUT'},
+            ]
         };
     }
 
@@ -85,12 +88,30 @@ export default class ProfileView extends Component {
             console.log(error);
         });
     }
+    
+    logout = () => {
+        gl_storage.signOut().then(() => {
+            this.props.navigator.pop();
+            if(this.props.logoutcb) {
+                this.props.logoutcb();
+            }
+        });
+    };
 
+    onActionSelected = (position) => {
+        var evt = this.state.actions[position];
+        if(evt.type === 'LOGOUT') {
+            this.logout();
+        }
+    };
+    
     render() {
         return (
             <View style={styles.rootContainer}>
                 <ToolbarAndroid
                     style={styles.toolbar}
+                    actions={this.state.actions}
+                    onActionSelected={this.onActionSelected}
                     navIcon={require("../resources/images/back.png")}
                     titleColor="white"
                     onIconClicked={this.props.navigator.pop}
