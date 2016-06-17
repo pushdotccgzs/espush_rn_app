@@ -3,7 +3,7 @@
  */
 
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, Switch} from 'react-native';
+import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, Switch, Vibration} from 'react-native';
 import ScrollableTabView, {DefaultTabBar, ScrollableTabBar} from 'react-native-scrollable-tab-view';
 import {constant} from "./constant";
 import {rt_status, send_at_cmd, get_gpio_status, set_gpio_status, generate_ws_url, change_color_led} from "./httpapi";
@@ -357,6 +357,7 @@ class IRView extends Component {
             let up_msg = base64.decode(msg.body);
             if(up_msg === 'IR1') {
                 this.flash_ir_image(500);
+                Vibration.vibrate();
             }
         };
 

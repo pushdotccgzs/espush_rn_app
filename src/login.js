@@ -3,11 +3,10 @@
  */
 
 import React, {Component} from 'react';
-import {View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ToolbarAndroid} from 'react-native';
-var Dimensions = require("Dimensions");
+import {View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ToolbarAndroid, Linking} from 'react-native';
 import {constant} from "./constant";
 import {login} from "./httpapi";
-
+var Dimensions = require("Dimensions");
 var _ = require("lodash");
 
 
@@ -46,6 +45,19 @@ export default class LoginView extends Component {
         });
     };
 
+    registerBtnPress = () => {
+        var url = 'https://espush.cn/webv2/register/';
+        Linking.canOpenURL(url).then(supported => {
+            if(!supported) {
+                alert('系统未安装浏览器？');
+            } else {
+                return Linking.openURL(url);
+            }
+        }).catch(err => {
+            alert('打开系统浏览器出错！')
+        });
+    };
+
     render() {
         return (
             <View style={styles.rootContainer}>
@@ -54,7 +66,7 @@ export default class LoginView extends Component {
                     navIcon={require("../resources/images/back.png")}
                     titleColor="white"
                     onIconClicked={this.backToMain}
-                    title="设备" />
+                    title="登录" />
 
                 <Text style={styles.titleText}>ESPUSH 账户登录</Text>
                 <View style={[styles.formContainer, {width: Dimensions.get('window').width - 80}]}>
@@ -77,9 +89,12 @@ export default class LoginView extends Component {
                             style={styles.textInput} />
                         <Image style={styles.rightImage} />
                     </View>
-                    <View>
-                        <TouchableOpacity style={styles.signinBtn} onPress={this.loginBtnPress}>
-                            <Text style={styles.signinBtnText}>登录</Text>
+                    <View style={styles.loginRegisterContainer}>
+                        <TouchableOpacity style={styles.btnStyle} onPress={this.loginBtnPress}>
+                            <Text style={styles.btnText}>登录</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.btnStyle} onPress={this.registerBtnPress}>
+                            <Text style={styles.btnText}>前往注册</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -117,19 +132,25 @@ const styles = StyleSheet.create({
     rightImage: {
         //
     },
-    signinBtn: {
+    btnStyle: {
         marginTop: 28,
         alignSelf: 'center',
-        width: 180,
+        width: 100,
         height: 50,
         backgroundColor: constant.navBackgroundColor,
         borderRadius: 25,
         justifyContent: 'center',
         overflow: 'hidden'
     },
-    signinBtnText: {
+    btnText: {
         fontSize: 18,
         alignSelf: 'center',
         color: 'white'
+    },
+    loginRegisterContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     }
 });

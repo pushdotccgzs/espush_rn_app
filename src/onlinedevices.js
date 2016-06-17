@@ -4,7 +4,7 @@
  */
 
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, ToastAndroid} from 'react-native';
+import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, ToastAndroid, ScrollView, RefreshControl} from 'react-native';
 var _ = require("lodash");
 
 import LoginView from "./login";
@@ -20,10 +20,75 @@ import {constant} from "./constant";
 var firmware_type = {
     UNKNOWN: '未知固件',
     AT: 'AT',
-    AT_PLUS: 'ESPUSH专属',
+    AT_PLUS: '蘑菇云专属开发板',
     NodeMCU: 'NodeMCU',
     SDK: 'SDK'
 };
+
+
+const styles = StyleSheet.create({
+    rootContainer: {
+        flex: 1,
+        flexDirection: 'column'
+    },
+    toolbar: {
+        backgroundColor: constant.navBackgroundColor,
+        height: 56
+    },
+    listview: {
+        flex: 1
+    },
+    touchableItems: {
+        borderStyle: 'solid',
+        borderBottomWidth: 1,
+        padding: 5,
+        borderColor: '#E1E1E1'
+    },
+    itemContainer: {
+        marginTop: 4,
+        marginBottom: 8,
+        marginLeft: 8,
+        marginRight: 8,
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center'
+    },
+    itemLogo: {
+        width: 50,
+        height: 50
+    },
+    rightContainer: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        marginLeft: 8
+    },
+    rightbootomContainer: {
+        marginTop: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    devType: {
+        //
+    },
+    devName: {
+        fontSize: 16,
+        color: 'black'
+    },
+    emptyTitle: {
+        fontSize: 18,
+        textAlign: 'center'
+    },
+    devInfo: {
+        alignSelf: 'flex-end'
+    },
+    emptyDev: {
+
+    },
+    scrollView: {
+        flex: 1
+    }
+});
 
 /*
  devname: '测试板',
@@ -38,6 +103,7 @@ export  default class OnlineDevices extends Component {
         let online = [];
         this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         this.state = {
+            isRefreshing: false,
             onlineDevs: this.ds.cloneWithRows(online),
             actions: [
                 {title: '平台登录', icon: require("../resources/images/login.png"), show: 'always', type: 'LOGIN'},
@@ -54,7 +120,7 @@ export  default class OnlineDevices extends Component {
     }
 
     loadOnlineDevices = () => {
-        user_online_devices(gl_storage.getTokenObj()).then((devs) => {
+        return user_online_devices(gl_storage.getTokenObj()).then((devs) => {
             console.info('ONLINE DEVS: ' + JSON.stringify(devs));
             var newState = _.cloneDeep(this.state);
             newState.onlineDevs = this.ds.cloneWithRows(devs);
@@ -180,9 +246,50 @@ export  default class OnlineDevices extends Component {
         }
     };
 
+    onRefresh = () => {
+        //设置为 正在刷新状态
+        //执行刷新
+        this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', true));
+        this.loadOnlineDevices().finally(() => {
+            this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
+        });
+    };
+
     render() {
+        let index_component = null;
+        if(this.state.onlineDevs.getRowCount()) {
+            index_component = (
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl
+                            onRefresh={this.onRefresh}
+                            refreshing={this.state.isRefreshing}
+                            progressBackgroundColor="#ffffff"
+                            colors={['#ff0000', '#00ff00', '#0000ff','#3ad564']} />
+                    }
+                    style={styles.scrollView}>
+                    <ListView
+                        enableEmptySections={true}
+                        style={styles.listview}
+                        dataSource={this.state.onlineDevs}
+                        renderRow={this.renderSingleDevices} />
+                </ScrollView>
+            );
+        } else {
+            index_component = (
+                <TouchableOpacity
+                    onPress={this.refreshOnlineDevices_or_login}
+                    style={styles.touchableItems}>
+                    <View style={styles.itemContainer}>
+                        <View style={styles.rightContainer}>
+                            <Text style={styles.emptyTitle}>{gl_storage.isSignedIn() ? "当前无设备在线，点击手动刷新。" : "戳右上角登录。"}</Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            );
+        }
         return (
-            <View>
+            <View style={styles.rootContainer}>
                 <ToolbarAndroid
                     actions={this.state.actions}
                     style={styles.toolbar}
@@ -190,25 +297,8 @@ export  default class OnlineDevices extends Component {
                     titleColor="white"
                     subtitleColor="white"
                     onActionSelected={this.onActionSelected}
-                    title="ESPUSH" />
-                {
-                    this.state.onlineDevs.getRowCount() ?
-                        <ListView
-                            enableEmptySections={true}
-                            style={styles.listview}
-                            dataSource={this.state.onlineDevs}
-                            renderRow={this.renderSingleDevices} />
-                        :
-                        <TouchableOpacity
-                            onPress={this.refreshOnlineDevices_or_login}
-                            style={styles.touchableItems}>
-                            <View style={styles.itemContainer}>
-                                <View style={styles.rightContainer}>
-                                    <Text style={styles.emptyTitle}>{gl_storage.isSignedIn() ? "当前无设备在线，点击刷新。" : "戳右上角登录。"}</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                }
+                    title="蘑菇云" />
+                {index_component}
             </View>
         );
     }
@@ -238,60 +328,3 @@ export  default class OnlineDevices extends Component {
         }
     };
 }
-
-const styles = StyleSheet.create({
-    toolbar: {
-        backgroundColor: constant.navBackgroundColor,
-        height: 56
-    },
-    listview: {
-        flex: 1
-    },
-    touchableItems: {
-        borderStyle: 'solid',
-        borderBottomWidth: 1,
-        padding: 5,
-        borderColor: '#E1E1E1'
-    },
-    itemContainer: {
-        marginTop: 4,
-        marginBottom: 8,
-        marginLeft: 8,
-        marginRight: 8,
-        flexDirection: 'row',
-        justifyContent: 'flex-start',
-        alignItems: 'center'
-    },
-    itemLogo: {
-        width: 50,
-        height: 50
-    },
-    rightContainer: {
-        flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        marginLeft: 8
-    },
-    rightbootomContainer: {
-        marginTop: 12,
-        flexDirection: 'row',
-        justifyContent: 'space-between'
-    },
-    devType: {
-        //
-    },
-    devName: {
-        fontSize: 16,
-        color: 'black'
-    },
-    emptyTitle: {
-        fontSize: 18,
-        textAlign: 'center'
-    },
-    devInfo: {
-        alignSelf: 'flex-end'
-    },
-    emptyDev: {
-
-    }
-});
