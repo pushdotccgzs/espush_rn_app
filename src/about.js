@@ -17,15 +17,19 @@ var about_html = `
     <title>Document</title>
 </head>
 <body>
-    <h1>关于</h1>
-    <p>ESPUSH是一个ESP8266 WIFI物理网芯片开发的推送服务平台，具备实时远程数据推送，智能数据采集与整理归纳，云端自动推送升级等功能。</p>
-    <p>ESPUSH只希望解决一个问题，即能在任何有网络的地方随时控制处于内网中的WIFI设备，譬如使用公司WIFI控制家里的机器人小车，回家的路上使用4G网络预先打开的热水器、空调器等。<a href="http://blog.espush.cn/">点此</a>查看示例</p>
+    <h2>关于蘑菇云平台</h2>
+    <p>蘑菇云（https://espush.cn/），是针对ESP8266 WIFI芯片研发的云开发平台，致力于提供最稳定、最易用的物联网云开发平台。</p>
+    <p>使用蘑菇云固件或SDK，能最快的时间内获得稳定可靠的云端控制能力。同时，蘑菇云还针对数据、传感器类应用提供可靠的基础设施如固件、服务端接口API、示例App等。使用蘑菇云搭配的ESP8266芯片能大大提高物联网基础设备开发效率。</p>
     <h4>如何使用?</h4>
     <p>教程在<a href="http://docs.espush.cn/">这里</a>.</p>
     <p>尝试在10分钟内做一个<a href="http://blog.espush.cn/ten_minute_socket.html">智能插座</a>.</p>
     <p>数据采集，绘图的例子：<a href="http://blog.espush.cn/ten_minute_humiture_sensor.html">温度传感器</a>数据在离线时还能缓存哦。</p>
-    <h4>其他事项</h4>
-    <p>这里是<a href="https://github.com/pushdotccgzs/espush_at">AT固件的github</a>链接，此AT固件基于官方最新的AT固件定制，新增了用于推送以及GPIO操作等多条指令。</p>
+    <h2>关于蘑菇云开发板</h2>
+    <p>蘑菇云平台功能测试板，板载LED、三色彩灯、 DHT11温湿度传感器、ST188红外光电传感器、继电器、控制按钮等，覆盖常见物联网开发应用场景如智能插座、红外远程告警、智能彩灯、云端温度曲线等。搭配蘑菇云专属固件与控制App，以及随附的教程资料，让你的物联网开发过程事半功倍。</p>
+    <h2>获取支持</h2>
+    <p>加入<a href="http://shang.qq.com/wpa/qunwpa?idkey=c5f0d4bbb717db6b9b53d716adee7cc0826ce1152b7ad668daec2744a5730507">Q群480288089</a>，一起讨论。</p>
+    <p>关注公众号espush，可微信远控设备。</p>
+    <p>商务合作请联系 <a href="mailto:webmaster@espush.cn">webmaster@espush.cn</a> </p>
 </body>
 </html>
 `;
@@ -55,7 +59,7 @@ export default class AboutView extends Component {
                     title="关于" />
                 <WebView
                     style={styles.webview}
-                    html={about_html} />
+                    source={{html: about_html}} />
             </View>
         );
     }

@@ -12,6 +12,7 @@ import AboutView from "./about";
 import DevDetailView from "./devdetail";
 import ProfileView from "./profileview";
 import {user_online_devices} from "./httpapi";
+import SmartConfigAndroid from "./smartconfig";
 import {constant} from "./constant";
 
 
@@ -41,6 +42,7 @@ export  default class OnlineDevices extends Component {
             actions: [
                 {title: '平台登录', icon: require("../resources/images/login.png"), show: 'always', type: 'LOGIN'},
                 {title: '开发板', type: 'TAOBAO'},
+                {title: '一键配置', type: 'SMARTCONFIG'},
                 {title: '关于', type: 'ABOUT'}
             ]
         };
@@ -159,12 +161,16 @@ export  default class OnlineDevices extends Component {
         });
     };
 
+    jumpToSmartConfig = () => {
+        SmartConfigAndroid.configActivity();
+    };
+
     onActionSelected = (position) => {
         var evt = this.state.actions[position];
         if(evt.type === 'LOGIN') {
             this.jumpToLogin();
-        } else if(evt.type === 'SMC') {
-            //alert(gl_storage);
+        } else if(evt.type === 'SMARTCONFIG') {
+            this.jumpToSmartConfig();
         } else if(evt.type === 'TAOBAO') {
             this.openTaobaoLink();
         } else if(evt.type === 'ABOUT') {
