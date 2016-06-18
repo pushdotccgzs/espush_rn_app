@@ -112,6 +112,9 @@ export  default class OnlineDevices extends Component {
                 {title: '关于', type: 'ABOUT'}
             ]
         };
+    }
+
+    componentDidMount() {
         gl_storage.getUserAuthStorage().then((token) => {
             this.loadOnlineDevices();
         }).catch((err) => {
@@ -194,7 +197,7 @@ export  default class OnlineDevices extends Component {
     };
 
     openTaobaoLink = () => {
-        var url = 'https://item.taobao.com/item.htm?id=523362788057';
+        var url = 'http://taobao.espush.cn/';
         Linking.canOpenURL(url).then(supported => {
             if(!supported) {
                 alert('系统未安装浏览器？');

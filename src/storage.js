@@ -30,7 +30,7 @@ export  default class EspushAsyncStorage {
         let req = await AsyncStorage.removeItem(STORAGE_KEY);
         this.token = undefined;
         return req;
-    }
+    };
 
     getUserAuthStorage = async () => {
         let tokenstr = await AsyncStorage.getItem(STORAGE_KEY);

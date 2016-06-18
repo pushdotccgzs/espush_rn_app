@@ -65,7 +65,6 @@ class ControlView extends Component {
     }
 
     change_relay = (newValue) => {
-
         let {chipid, appid, appkey} = this.props;
         let edge = newValue ? "1" : "0";
         set_gpio_status(appid, appkey, chipid, 5, edge).then((result) => {
@@ -410,28 +409,67 @@ const gpio_styles = StyleSheet.create({
 class GPIOView extends Component {
     constructor(props) {
         super(props);
-        var data = [
-            {pin: 3, edge: 1},
-            {pin: 4, edge: 0},
-            {pin: 5, edge: 0},
-            {pin: 9, edge: 1}
-        ];
-        var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+        /**
+         {pin: 3, edge: true},
+         {pin: 4, edge: false},
+         {pin: 5, edge: true},
+         {pin: 9, edge: true}
+         */
+        this.io_status = [];
+        this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         this.state = {
-            dataSource: ds.cloneWithRows(data)
+            dataSource: this.ds.cloneWithRows(this.io_status)
         }
     }
 
-    onValueChanged = (newVal, pin) => {
-        alert('new val: ' + newVal + ' PIN: ' + pin);
+    changeGPIO = (pin, newValue) => {
+    };
+
+    stateChanged = (pin, newValue) => {
+        _.set(this.io_status[_.findIndex(this.io_status, ['pin', pin])], 'edge', newValue);
+        this.setState(_.set(_.cloneDeep(this.state), 'dataSource', this.ds.cloneWithRows(this.io_status)));
+    };
+
+    fetchData = () => {
+        let {appid, appkey, chipid} = this.props;
+        get_gpio_status(appid, appkey, chipid).then((result) => {
+            console.log(result);
+            this.io_status = _.cloneDeep(result);
+            _.forEach(this.io_status, (item) => {
+                item.edge = (item.edge ? true : false);
+            });
+            this.io_status = _.filter(this.io_status, (item) => {
+                return _.includes([0, 4, 5, 9, 10, 12, 13, 14, 15], item.pin);
+            });
+            console.log(this.io_status);
+            this.setState(_.set(_.cloneDeep(this.state), 'dataSource', this.ds.cloneWithRows(this.io_status)));
+        }).catch((error) => {
+            alert(error);
+        });
+    };
+
+    componentDidMount() {
+        this.fetchData();
+    }
+
+    onValueChanged = (pin, newVal) => {
+        let {chipid, appid, appkey} = this.props;
+        let edge = newVal ? "1" : "0";
+        set_gpio_status(appid, appkey, chipid, pin, edge).then((result) => {
+            this.stateChanged(pin, newVal);
+        }).catch((error) => {
+            alert('操作失败，请稍后再试！ ' + error);
+        });
     };
 
     renderRow = (rowData) => {
         return (
-            <TouchableOpacity onPress={_.partial(this.onValueChanged, rowData.pin)}>
+            <TouchableOpacity onPress={_.partial(this.onValueChanged, rowData.pin, !rowData.edge)}>
                 <View style={gpio_styles.itemContainer}>
                     <Text style={gpio_styles.gpioText}>GPIO {rowData.pin}</Text>
-                    <Switch value={rowData.edge===1} />
+                    <Switch
+                        onValueChange={_.partial(this.onValueChanged, rowData.pin)}
+                        value={rowData.edge===true} />
                 </View>
             </TouchableOpacity>
         );
@@ -441,6 +479,7 @@ class GPIOView extends Component {
         return (
             <View style={gpio_styles.rootContainer}>
                 <ListView
+                    enableEmptySections={true}
                     renderRow={this.renderRow}
                     dataSource={this.state.dataSource}/>
             </View>

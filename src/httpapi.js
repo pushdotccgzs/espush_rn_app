@@ -68,7 +68,8 @@ async function user_online_devices(token) {
             "token": token.token
         }
     });
-    return await response.json();
+    rspbody = await response.json();
+    return rspbody;
 }
 
 
