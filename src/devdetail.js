@@ -3,7 +3,7 @@
  */
 
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, Switch, Vibration} from 'react-native';
+import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, Switch, Vibration, ToastAndroid} from 'react-native';
 import ScrollableTabView, {DefaultTabBar, ScrollableTabBar} from 'react-native-scrollable-tab-view';
 import {constant} from "./constant";
 import {rt_status, send_at_cmd, get_gpio_status, set_gpio_status, generate_ws_url, change_color_led} from "./httpapi";
@@ -290,7 +290,7 @@ class DhtView extends Component {
                         style={dht_styles.refreshBtn}>
                         <Text style={dht_styles.refreshBtnText}>刷新</Text>
                     </TouchableOpacity>
-                    <Text style={dht_styles.refreshSucc}>刷新成功</Text>
+                    <Text style={dht_styles.refreshSucc}>{/*"刷新成功"*/}</Text>
                 </View>
 
             </View>
@@ -310,6 +310,11 @@ const ir_styles = StyleSheet.create({
         marginTop: 150,
         width: 128,
         height: 128
+    },
+    textContent: {
+        marginLeft: 50,
+        marginRight: 50,
+        lineHeight: 25
     }
 });
 
@@ -347,7 +352,7 @@ class IRView extends Component {
         // alert(url);
         this.wsobj = new WebSocket(url);
         this.wsobj.onopen = () => {
-            //
+            ToastAndroid.show('已连接到云平台。', ToastAndroid.SHORT);
         };
 
         this.wsobj.onmessage = (e) => {
@@ -362,12 +367,13 @@ class IRView extends Component {
 
         this.wsobj.onerror = (e) => {
             // e.message
-            alert('实时连接发生错误！');
+            alert('云平台连接发生错误！');
         };
 
         this.wsobj.onclose = (e) => {
             // e.code, e.reason
             // alert('到服务端的实时连接被断开！');
+            ToastAndroid.show('已从云平台连接断开。', ToastAndroid.SHORT);
         };
     };
 
@@ -377,6 +383,7 @@ class IRView extends Component {
         return (
             <View style={ir_styles.rootContainer}>
                 <Image style={ir_styles.images} source={icon} />
+                <Text style={ir_styles.textContent}>当上图转为红色时，表明开发板上的红外光电传感器检测到障碍物的变化。</Text>
             </View>
         );
     }

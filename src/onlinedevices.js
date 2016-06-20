@@ -104,11 +104,13 @@ export  default class OnlineDevices extends Component {
         this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         this.state = {
             isRefreshing: false,
+            isLoading: false,
             onlineDevs: this.ds.cloneWithRows(online),
             actions: [
                 {title: '平台登录', icon: require("../resources/images/login.png"), show: 'always', type: 'LOGIN'},
-                {title: '开发板', type: 'TAOBAO'},
                 {title: '一键配置', type: 'SMARTCONFIG'},
+                {title: '开发板', type: 'TAOBAO'},
+                {title: '首页', type: 'INDEX'},
                 {title: '关于', type: 'ABOUT'}
             ]
         };
@@ -116,7 +118,10 @@ export  default class OnlineDevices extends Component {
 
     componentDidMount() {
         gl_storage.getUserAuthStorage().then((token) => {
-            this.loadOnlineDevices();
+            this.setState(_.set(_.cloneDeep(this.state), 'isLoading', true));
+            this.loadOnlineDevices().finally(() => {
+                this.setState(_.set(_.cloneDeep(this.state), 'isLoading', false));
+            });
         }).catch((err) => {
             ToastAndroid.show('尚未登录，戳右上角登录后获取在线设备列表。', ToastAndroid.SHORT);
         })
@@ -138,8 +143,7 @@ export  default class OnlineDevices extends Component {
             }
             this.setState(newState);
         }).catch((error) => {
-            alert('请求在线设备时发生错误，需要重新登录用户。');
-            console.log(error);
+            alert('请求在线设备时发生错误：' + error);
             let newState = _.cloneDeep(this.state);
             newState = this.change_ico_profile_login(newState);
             this.setState(newState);
@@ -196,8 +200,7 @@ export  default class OnlineDevices extends Component {
         )
     };
 
-    openTaobaoLink = () => {
-        var url = 'http://taobao.espush.cn/';
+    openBrowser = (url) => {
         Linking.canOpenURL(url).then(supported => {
             if(!supported) {
                 alert('系统未安装浏览器？');
@@ -241,9 +244,11 @@ export  default class OnlineDevices extends Component {
         } else if(evt.type === 'SMARTCONFIG') {
             this.jumpToSmartConfig();
         } else if(evt.type === 'TAOBAO') {
-            this.openTaobaoLink();
+            this.openBrowser( 'http://taobao.espush.cn/');
         } else if(evt.type === 'ABOUT') {
             this.jumpToAbout();
+        } else if(evt.type === 'INDEX') {
+            this.openBrowser('https://espush.cn/')
         } else if(evt.type === 'PROFILE') {
             this.jumpToProfile();
         }
@@ -253,44 +258,64 @@ export  default class OnlineDevices extends Component {
         //设置为 正在刷新状态
         //执行刷新
         this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', true));
-        this.loadOnlineDevices().finally(() => {
+        if(!gl_storage.isSignedIn()) {
             this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
-        });
+            this.jumpToLogin();
+        } else {
+            this.loadOnlineDevices().finally(() => {
+                this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
+            });
+        }
     };
 
     render() {
         let index_component = null;
-        if(this.state.onlineDevs.getRowCount()) {
-            index_component = (
-                <ScrollView
-                    refreshControl={
-                        <RefreshControl
-                            onRefresh={this.onRefresh}
-                            refreshing={this.state.isRefreshing}
-                            progressBackgroundColor="#ffffff"
-                            colors={['#ff0000', '#00ff00', '#0000ff','#3ad564']} />
-                    }
-                    style={styles.scrollView}>
-                    <ListView
-                        enableEmptySections={true}
-                        style={styles.listview}
-                        dataSource={this.state.onlineDevs}
-                        renderRow={this.renderSingleDevices} />
-                </ScrollView>
-            );
-        } else {
+        //未登录、正在加载、0设备，有设备
+        if(!gl_storage.isSignedIn()) {
             index_component = (
                 <TouchableOpacity
                     onPress={this.refreshOnlineDevices_or_login}
                     style={styles.touchableItems}>
                     <View style={styles.itemContainer}>
                         <View style={styles.rightContainer}>
-                            <Text style={styles.emptyTitle}>{gl_storage.isSignedIn() ? "当前无设备在线，点击手动刷新。" : "戳右上角登录。"}</Text>
+                            <Text style={styles.emptyTitle}>戳右上角登录。</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
             );
+        } else if(this.state.isLoading) {
+            index_component = (
+                <TouchableOpacity
+                    style={styles.touchableItems}>
+                    <View style={styles.itemContainer}>
+                        <View style={styles.rightContainer}>
+                            <Text style={styles.emptyTitle}>正在加载在线设备，请求中...</Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            );
+        } else if(!this.state.onlineDevs.getRowCount()) {
+            index_component = (
+                <TouchableOpacity
+                    onPress={this.refreshOnlineDevices_or_login}
+                    style={styles.touchableItems}>
+                    <View style={styles.itemContainer}>
+                        <View style={styles.rightContainer}>
+                            <Text style={styles.emptyTitle}>当前无设备在线，可稍后再次刷新。</Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            );
+        } else {
+            index_component = (
+                <ListView
+                    enableEmptySections={true}
+                    style={styles.listview}
+                    dataSource={this.state.onlineDevs}
+                    renderRow={this.renderSingleDevices} />
+            );
         }
+
         return (
             <View style={styles.rootContainer}>
                 <ToolbarAndroid
@@ -301,7 +326,18 @@ export  default class OnlineDevices extends Component {
                     subtitleColor="white"
                     onActionSelected={this.onActionSelected}
                     title="蘑菇云" />
-                {index_component}
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl
+                            onRefresh={this.onRefresh}
+                            refreshing={this.state.isRefreshing}
+                            progressBackgroundColor="#ffffff"
+                            colors={['#ff0000', '#00ff00', '#0000ff','#3ad564']} />
+                    }
+                    style={styles.scrollView}>
+
+                    {index_component}
+                </ScrollView>
             </View>
         );
     }
