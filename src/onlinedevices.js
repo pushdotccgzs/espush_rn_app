@@ -131,15 +131,15 @@ export  default class OnlineDevices extends Component {
             ToastAndroid.show('尚未登录，戳右上角登录后获取在线设备列表。', ToastAndroid.SHORT);
         });
         //如果是WIFI模式，则搜索局域网
-        NetInfo.addEventListener('change', (reach) => {
-            console.log('WIFI CHANGE.');
-            if(reach === 'WIFI') {
-                this.lan_deviceFinder();
-            } else {
-                //去除所有的非WIFI设备；
-                this.remove_lan_device();
-            }
-        });
+        // NetInfo.addEventListener('change', (reach) => {
+        //     console.log('WIFI CHANGE.');
+        //     if(reach === 'WIFI') {
+        //         this.lan_deviceFinder();
+        //     } else {
+        //         //去除所有的非WIFI设备；
+        //         this.remove_lan_device();
+        //     }
+        // });
     }
 
     remove_lan_device = () => {
@@ -313,7 +313,7 @@ export  default class OnlineDevices extends Component {
             this.loadOnlineDevices().finally(() => {
                 this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
             });
-            this.lan_deviceFinder();
+            // this.lan_deviceFinder();
         }
     };
 
