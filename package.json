@@ -12,6 +12,7 @@
     "md5": "^2.1.0",
     "react": "^15.1.0",
     "react-native": "0.27",
+    "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
     "react-native-scrollable-tab-view": "^0.4.4",
     "react-native-slider": "^0.8.0"
   }

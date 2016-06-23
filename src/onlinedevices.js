@@ -4,7 +4,7 @@
  */
 
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, ToastAndroid, ScrollView, RefreshControl} from 'react-native';
+import {View, Text, StyleSheet, AppRegistry, StatusBar, Navigator, ToolbarAndroid, ListView, Image, TouchableOpacity, Linking, ToastAndroid, ScrollView, RefreshControl, NetInfo} from 'react-native';
 var _ = require("lodash");
 
 import LoginView from "./login";
@@ -13,8 +13,12 @@ import DevDetailView from "./devdetail";
 import ProfileView from "./profileview";
 import {user_online_devices} from "./httpapi";
 import SmartConfigAndroid from "./smartconfig";
+import DeviceFinderAndroid from "./devicefinder";
 import {constant} from "./constant";
 
+
+import Camera from 'react-native-camera';
+import CameraExample from "./camera_test";
 
 
 var firmware_type = {
@@ -22,7 +26,7 @@ var firmware_type = {
     AT: 'AT',
     AT_PLUS: '蘑菇云专属开发板',
     NodeMCU: 'NodeMCU',
-    SDK: 'SDK'
+    SDK: 'SDK',
 };
 
 
@@ -102,10 +106,11 @@ export  default class OnlineDevices extends Component {
         super(props);
         let online = [];
         this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+        this.current_netinfo = '';
         this.state = {
             isRefreshing: false,
             isLoading: false,
-            onlineDevs: this.ds.cloneWithRows(online),
+            onlineDevs: [],
             actions: [
                 {title: '平台登录', icon: require("../resources/images/login.png"), show: 'always', type: 'LOGIN'},
                 {title: '一键配置', type: 'SMARTCONFIG'},
@@ -124,14 +129,50 @@ export  default class OnlineDevices extends Component {
             });
         }).catch((err) => {
             ToastAndroid.show('尚未登录，戳右上角登录后获取在线设备列表。', ToastAndroid.SHORT);
-        })
+        });
+        //如果是WIFI模式，则搜索局域网
+        NetInfo.addEventListener('change', (reach) => {
+            console.log('WIFI CHANGE.');
+            if(reach === 'WIFI') {
+                this.lan_deviceFinder();
+            } else {
+                //去除所有的非WIFI设备；
+                this.remove_lan_device();
+            }
+        });
     }
+
+    remove_lan_device = () => {
+        let newState = _.cloneDeep(this.state);
+        _.remove(newState.onlineDevs, ['netinfo', 'LAN']);
+        this.setState(newState);
+    };
+
+    lan_deviceFinder = () => {
+        return DeviceFinderAndroid.find('ESPUSH_LOCAL_CONTROL').then((result) => {
+            //alert('FIND 成功，发现设备数量: ' + result.length);
+            let newState = _.cloneDeep(this.state);
+            console.log(result);
+            let lan_devices = _.map(result, (lan_obj) => {
+                return {
+                    devname: parseInt(lan_obj.chipid.slice(6)),
+                    appname: lan_obj.ipaddr,
+                    vertype: 'AT_PLUS',
+                    netinfo: 'LAN'
+                }
+            });
+            newState.onlineDevs = newState.onlineDevs.concat(lan_devices);
+            this.setState(newState);
+        }).catch((error) => {
+            alert('FIND 失败');
+        });
+    };
 
     loadOnlineDevices = () => {
         return user_online_devices(gl_storage.getTokenObj()).then((devs) => {
             console.info('ONLINE DEVS: ' + JSON.stringify(devs));
             var newState = _.cloneDeep(this.state);
-            newState.onlineDevs = this.ds.cloneWithRows(devs);
+            newState.onlineDevs = newState.onlineDevs.concat(devs);
             var pos = _.findIndex(newState.actions, ['type', 'LOGIN']);
             if(pos !== -1) {
                 newState.actions[pos] = {
@@ -144,9 +185,9 @@ export  default class OnlineDevices extends Component {
             this.setState(newState);
         }).catch((error) => {
             alert('请求在线设备时发生错误：' + error);
-            let newState = _.cloneDeep(this.state);
-            newState = this.change_ico_profile_login(newState);
-            this.setState(newState);
+            // let newState = _.cloneDeep(this.state);
+            // newState = this.change_ico_profile_login(newState);
+            // this.setState(newState);
         });
     };
 
@@ -231,6 +272,10 @@ export  default class OnlineDevices extends Component {
             name: 'AboutView',
             component: AboutView
         });
+        // this.props.navigator.push({
+        //     name: 'CameraExample',
+        //     component: CameraExample
+        // });
     };
 
     jumpToSmartConfig = () => {
@@ -257,7 +302,10 @@ export  default class OnlineDevices extends Component {
     onRefresh = () => {
         //设置为 正在刷新状态
         //执行刷新
-        this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', true));
+        let newState = _.cloneDeep(this.state);
+        newState.isRefreshing = true;
+        newState.onlineDevs = [];
+        this.setState(newState);
         if(!gl_storage.isSignedIn()) {
             this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
             this.jumpToLogin();
@@ -265,6 +313,7 @@ export  default class OnlineDevices extends Component {
             this.loadOnlineDevices().finally(() => {
                 this.setState(_.set(_.cloneDeep(this.state), 'isRefreshing', false));
             });
+            this.lan_deviceFinder();
         }
     };
 
@@ -294,14 +343,14 @@ export  default class OnlineDevices extends Component {
                     </View>
                 </TouchableOpacity>
             );
-        } else if(!this.state.onlineDevs.getRowCount()) {
+        } else if(!this.state.onlineDevs.length>0) {
             index_component = (
                 <TouchableOpacity
                     onPress={this.refreshOnlineDevices_or_login}
                     style={styles.touchableItems}>
                     <View style={styles.itemContainer}>
                         <View style={styles.rightContainer}>
-                            <Text style={styles.emptyTitle}>当前无设备在线，可稍后再次刷新。</Text>
+                            <Text style={styles.emptyTitle}>{this.state.isRefreshing ? "正在刷新在线设备, 请稍候..." : "当前无设备在线，可稍后再次刷新。"}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -311,7 +360,7 @@ export  default class OnlineDevices extends Component {
                 <ListView
                     enableEmptySections={true}
                     style={styles.listview}
-                    dataSource={this.state.onlineDevs}
+                    dataSource={this.ds.cloneWithRows(this.state.onlineDevs)}
                     renderRow={this.renderSingleDevices} />
             );
         }
@@ -355,7 +404,7 @@ export  default class OnlineDevices extends Component {
     logoutcb = () => {
         let newState = _.cloneDeep(this.state);
         newState = this.change_ico_profile_login(newState);
-        newState.onlineDevs = this.ds.cloneWithRows([]);
+        newState.onlineDevs = [];
         this.setState(newState);
     };
 

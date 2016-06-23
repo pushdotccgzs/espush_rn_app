@@ -113,5 +113,6 @@
     <orderEntry type="library" exported="" name="appcompat-v7-23.0.1" level="project" />
     <orderEntry type="library" exported="" name="fbcore-0.10.0" level="project" />
     <orderEntry type="library" exported="" name="imagepipeline-0.10.0" level="project" />
+    <orderEntry type="module" module-name="react-native-camera" exported="" />
   </component>
 </module>

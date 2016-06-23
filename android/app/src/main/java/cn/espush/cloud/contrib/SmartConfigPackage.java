@@ -1,4 +1,4 @@
-package cn.espush.cloud;
+package cn.espush.cloud.contrib;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;

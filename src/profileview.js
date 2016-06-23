@@ -64,7 +64,7 @@ export default class ProfileView extends Component {
         this.state = {
             apps: this.ds.cloneWithRows([]),
             actions: [
-                {title: '注销', type: 'LOGOUT'},
+                {title: '注销', type: 'LOGOUT'}
             ]
         };
     }

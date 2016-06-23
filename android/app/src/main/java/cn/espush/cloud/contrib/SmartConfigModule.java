@@ -1,4 +1,4 @@
-package cn.espush.cloud;
+package cn.espush.cloud.contrib;
 
 import android.content.Intent;
 

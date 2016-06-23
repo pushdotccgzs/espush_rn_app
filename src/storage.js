@@ -7,6 +7,7 @@ import React from 'react';
 import {AsyncStorage} from 'react-native';
 
 const STORAGE_KEY = 'espush_auth';
+const STORAGE_APPS_KEY = 'espush_user_apps';
 
 export  default class EspushAsyncStorage {
     constructor() {
@@ -40,6 +41,10 @@ export  default class EspushAsyncStorage {
         }
         this.token = JSON.parse(tokenstr);
         return this.token;
+    };
+
+    getUserApps = async() => {
+        let apps = await AsyncStorage.getItem(STORAGE_APPS_KEY);
     };
 }
 
